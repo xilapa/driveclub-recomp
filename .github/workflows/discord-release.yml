@@ -19,6 +19,8 @@ permissions:
 
 jobs:
   announce:
+    # upstream's Discord only; forks have no webhook
+    if: github.repository == 'OverkillLabs3/driveclub-recomp'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

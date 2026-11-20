@@ -2,6 +2,14 @@
 
 **DriveClub for PS4 (version 1.28), running natively on Windows and Linux.**
 
+## What's different in this fork
+
+This is a fork of [OverkillLabs3/driveclub-recomp](https://github.com/OverkillLabs3/driveclub-recomp). Everything is as upstream, plus:
+
+- **Head tracking:** the cockpit view follows your head, with Beam Eye Tracker (a webcam), opentrack or TrackIR. Turn on **Head tracking** on the launcher's **Driving** tab; see [Head tracking](#head-tracking).
+
+This fork's builds are on its [Releases](../../releases) page, made with the **Windows release (manual)** workflow (Actions tab, Run workflow). The launcher's update check looks at upstream's releases: updating from it replaces this fork's build with upstream's, without head tracking.
+
 <img width="1920" height="1080" alt="s009 20" src="https://github.com/user-attachments/assets/4c0fe155-eae9-4c78-aa24-4a5b154e2b9f" />
 
 The source code is in this repository and the build is on the [Releases](../../releases) page.
