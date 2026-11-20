@@ -41,6 +41,7 @@ static uint64_t import_count;
 static unsigned char *image;
 static size_t page_size;
 #include "runtime_camera_patch.inc"
+#include "runtime_head_tracking.inc"
 #include "runtime_horizon_lock.inc"
 #include "runtime_environment_timelapse.inc"
 #include "runtime_scene_debug.inc"

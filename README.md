@@ -131,6 +131,10 @@ The **Field of view** slider on the **Assists and view** page sets the view from
 
 Tested with a Moza R3, a Fanatec 8 Nm direct drive base with ClubSport Pedals and a Fanatec handbrake plugged into the pedals, and a Logitech Driving Force Shifter. On some PCs Windows takes a long time to list game controllers; the game then starts later and pauses when a controller is plugged in while it runs.
 
+### Head tracking
+
+The cockpit view can follow your head (Windows). It reads any tracker that offers the TrackIR interface: **Beam Eye Tracker** with a webcam, **opentrack** or **TrackIR**. Start the tracker first (in Beam Eye Tracker, turn on its TrackIR / opentrack output), then turn on **Head tracking** on the launcher's **Driving** tab. Turning and lifting your head turns the view left, right, up and down, and leaning moves the driver's eyes; the game's own look-around and head sway stay on top. Recentring and sensitivity are set in the tracker's own program. The log says `head tracking on` with the tracker's file when it is found, and the first pose it read.
+
 ## Settings
 The window that opens when you start `DriveClub.exe` has every setting. Press **Play** to save them; they are kept for later starts.
 
@@ -158,7 +162,7 @@ The window that opens when you start `DriveClub.exe` has every setting. Press **
 
 **Gameplay:** player name, borderless fullscreen, FPS counter, motion blur and depth of field off, no reset-to-track timer, no track barriers, and photo mode options.
 
-**Driving:** the field of view, **Lock to horizon** (Off, Cockpit or All views: the horizon stays level while the car leans and dips, as in Assetto Corsa; the driver's head still looks into corners and its sway is smoothed, which is easier on motion sickness; All views does the bonnet, bumper and chase views too), **Camera shake** (0 to 100% of the game's shake over bumps and kerbs; the game's own Options menu has a Camera shake setting that adds more on top, so set it to 0 there too for the calmest view), the gearbox, brake assist, hardcore handling and wheel assist, and the steering wheel (Wheel Setup and force feedback, see [Steering wheels](#steering-wheels)). **Sim** turns the assists off, with a manual gearbox and hardcore handling; **Assisted** uses an automatic gearbox, brake assist and wheel assist; **Game Defaults** leaves them to the game's own menu. A choice made here wins over the game's menu; **In-game** hands that option back to the menu.
+**Driving:** the field of view, **Lock to horizon** (Off, Cockpit or All views: the horizon stays level while the car leans and dips, as in Assetto Corsa; the driver's head still looks into corners and its sway is smoothed, which is easier on motion sickness; All views does the bonnet, bumper and chase views too), **Head tracking** (the cockpit view follows your head, see [Head tracking](#head-tracking)), **Camera shake** (0 to 100% of the game's shake over bumps and kerbs; the game's own Options menu has a Camera shake setting that adds more on top, so set it to 0 there too for the calmest view), the gearbox, brake assist, hardcore handling and wheel assist, and the steering wheel (Wheel Setup and force feedback, see [Steering wheels](#steering-wheels)). **Sim** turns the assists off, with a manual gearbox and hardcore handling; **Assisted** uses an automatic gearbox, brake assist and wheel assist; **Game Defaults** leaves them to the game's own menu. A choice made here wins over the game's menu; **In-game** hands that option back to the menu.
 
 **Online play** (General tab): Off, **Host a session** or **Join a session** (type the host's IP address). Players reach each other over a home network or a VPN. Run `Allow-Firewall.bat` once. Both players need the same version. More in [docs/online](docs/online). A public lobby is being tested on our Discord and is not part of this release.
 
@@ -170,7 +174,7 @@ The window that opens when you start `DriveClub.exe` has every setting. Press **
 
 **Picture** (Display tab): brightness, contrast and gamma. In the game, **F4** picks contrast or gamma and **Page Up / Page Down** change the value.
 
-**Lock to horizon** and **Camera shake** (Driving tab): keep the horizon level in corners (cockpit or all views), and lower how much the camera shakes.
+**Lock to horizon**, **Head tracking** and **Camera shake** (Driving tab): keep the horizon level in corners (cockpit or all views), turn the cockpit view with your head (see [Head tracking](#head-tracking)), and lower how much the camera shakes.
 
 **Skip the hardware check:** the launcher checks that your processor and graphics card can run the game (a processor with AVX, BMI1, LZCNT and MOVBE, and Vulkan 1.3). If it ever refuses hardware that works, turn this on to start anyway.
 

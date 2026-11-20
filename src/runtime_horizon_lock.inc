@@ -31,11 +31,15 @@
    Camera shake: after the levelling, the base update applies each of the camera's shake effects to its matrix
    (+0xcc8bf1: `effects[i]->vtable[+0x10](effect, this+0x10)`, i in rbx). That call is wrapped: the effect runs as the
    game has it, and the matrix it leaves is moved back towards the one before it by the percentage. The effects' own
-   state is not touched. */
+   state is not touched.
+
+   Head tracking (runtime_head_tracking.inc, BB_HEAD_TRACKING=1) uses the cockpit hook too: it is installed when either is
+   on, and the head's turn is put on the cockpit camera after the levelling. */
 #ifdef _WIN32
 #include <math.h>
 static __attribute__((used)) uintptr_t horizon_lock_resume, horizon_cameras_resume;
 static int horizon_mode;               /* 0 off, 1 cockpit, 2 all views */
+static int head_tracking;              /* BB_HEAD_TRACKING=1 and the TrackIR interface loaded */
 static float horizon_smooth_s=0.25f;
 static void horizon_normalize(float v[3]) {
     const float n=sqrtf(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
@@ -158,7 +162,8 @@ static void horizon_level(float *cam, const float *car, const void *key, const c
     }
 }
 static __attribute__((used,noinline)) ABI void horizon_lock_compute(float *camera) {
-    horizon_level(camera+0x270/4,camera+0x2d0/4,camera,"cockpit");
+    if (horizon_mode) horizon_level(camera+0x270/4,camera+0x2d0/4,camera,"cockpit");
+    if (head_tracking) head_tracking_apply(camera+0x270/4);
 }
 /* The other views (BB_LOCK_HORIZON=2), from the base camera update: `this` with its matrix at +0x10. */
 static __attribute__((used,noinline)) ABI void horizon_cameras_compute(unsigned char *camera) {
@@ -292,16 +297,18 @@ static void horizon_lock_install(void) {
         }
         printf("Runtime: camera shake %d%%%s\n",(int)lroundf(camera_shake*100.0f),fits ? "" : " (does not fit this game version: as made)");
     }
-    if (!horizon_mode) return;
+    head_tracking=head_tracking_install();
+    if (!horizon_mode && !head_tracking) return;
     static const unsigned char head[14]={0xc4,0xc1,0x79,0x6f,0x87,0x10,0x03,0x00,0x00,   /* vmovdqa xmm0,[r15+0x310] */
                                          0xc5,0xf9,0x70,0xc8,0x00};                     /* vpshufd xmm1,xmm0,0 */
     static const unsigned char cameras[14]={0xc4,0xc1,0x78,0x29,0x44,0x24,0x40,   /* vmovaps [r12+0x40],xmm0 */
                                             0x49,0x8b,0x04,0x24,                  /* mov rax,[r12] */
                                             0x4c,0x89,0xe7};                      /* mov rdi,r12 */
     if (!horizon_patch(0xb92420,head,(uintptr_t)horizon_lock_bridge,&horizon_lock_resume)) {
-        puts("Runtime: lock to horizon does not fit this game version; off");
+        puts("Runtime: lock to horizon and head tracking do not fit this game version; off");
         return;
     }
+    if (!horizon_mode) return;
     const int others=horizon_mode==2 && horizon_patch(0xcc8a57,cameras,(uintptr_t)horizon_cameras_bridge,&horizon_cameras_resume);
     printf("Runtime: lock to horizon on: the cockpit view%s steadied (follows the car's slow pitch and roll), smoothing %d ms\n",
            others ? ", bonnet, bumper, dash and chase views" : horizon_mode==2 ? " (the other views do not fit this game version)" : "",

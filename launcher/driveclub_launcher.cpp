@@ -182,6 +182,7 @@ std::wstring g_status;
 std::wstring g_settings_error;
 std::wstring g_gpu_problem;  // from CheckGpu() at start; Play stays off while it is set, unless the check is skipped
 int g_lock_horizon = 0;    // the horizon stays level: 0 off, 1 cockpit, 2 all views (BB_LOCK_HORIZON); launcher.ini lock_horizon=
+bool g_head_tracking = false;  // the "Head tracking" toggle (BB_HEAD_TRACKING); launcher.ini head_tracking=
 int g_camera_shake = -1;   // the Camera shake slider (BB_CAMERA_SHAKE, percent); launcher.ini camera_shake=
 int camera_shake_saved = -1;
 bool g_skip_gpu_check = false;  // "Skip the graphics card check" in the launcher (skip_gpu_check= in launcher.ini)
@@ -1711,6 +1712,12 @@ void BuildModel() {
                                L"\x2022 The driver's head still looks into corners; its sway is smoothed.\n"
                                L"Tip: helps with motion sickness, together with a lower Camera shake.",
                                {L"Off", L"Cockpit", L"All views"}, {"@lock_horizon", "", ""}, 0);
+  const int head_tracking = toggle(L"Head tracking",
+      L"Turns the driver's view with your head, in the cockpit view.\n"
+      L"\x2022 Works with Beam Eye Tracker (webcam), opentrack and TrackIR: start one of them before the game.\n"
+      L"\x2022 In Beam Eye Tracker, turn on its TrackIR / opentrack output.\n"
+      L"\x2022 Recentring and sensitivity are set in the tracker's own program.",
+      "@head_tracking", false);
   {
     Ctl c{L"Camera shake",
           L"How much the camera shakes over bumps, kerbs and at speed.\n"
@@ -1818,7 +1825,7 @@ void BuildModel() {
   g_cards.push_back({L"CONTENT", {unlock, unlock_all}, 0, kTabGameplay});
   g_cards.push_back({L"SAVES", {g_profile_row, g_save_backup_row, g_save_restore_row}, 0, kTabGameplay});
   g_cards.push_back({L"STARTUP AND OVERLAYS", {showfps, showpedals, overlays, autoplay, updatecheck, g_skip_intro_row, g_telemetry, g_triggers}, 0, kTabGameplay});
-  g_cards.push_back({L"VIEW AND KEYS", {g_fov, lock_horizon, g_camera_shake}, 0, kTabDriving,
+  g_cards.push_back({L"VIEW AND KEYS", {g_fov, lock_horizon, head_tracking, g_camera_shake}, 0, kTabDriving,
                      L"Keys while playing:\n"
                      L"F2   pedal inputs\n"
                      L"F4   picture: brightness, contrast or gamma\n"
@@ -1979,6 +1986,7 @@ void LoadSettings() {
     if (line.rfind("timelapse_rate=",0)==0) g_timelapse_rate=(std::clamp)(atoi(line.substr(15).c_str()),1,3600);
     if (line.rfind("camera_patch=",0)==0) { g_camera_patch=line.substr(13)=="1";g_camera_patch_saved=true; }
     if (line.rfind("lock_horizon=", 0) == 0) g_lock_horizon = (std::clamp)(atoi(line.substr(13).c_str()), 0, 2);
+    if (line.rfind("head_tracking=", 0) == 0) g_head_tracking = line.substr(14) == "1";
     if (line.rfind("camera_shake=", 0) == 0) camera_shake_saved = atoi(line.substr(13).c_str());
     if (line.rfind("skip_gpu_check=", 0) == 0) g_skip_gpu_check = line.substr(15) == "1";
     if (line.rfind("overlays=", 0) == 0) g_allow_overlays = line.substr(9) == "1";
@@ -2083,6 +2091,10 @@ void LoadSettings() {
     if (c.kind == Kind::Toggle && c.patches[0] == "@camera_patch") { c.sel=g_camera_patch?1:0; continue; }
     if (c.kind == Kind::Segmented && c.patches[0] == "@lock_horizon") {
       c.sel = g_lock_horizon;
+      continue;
+    }
+    if (c.kind == Kind::Toggle && c.patches[0] == "@head_tracking") {
+      c.sel = g_head_tracking ? 1 : 0;
       continue;
     }
     if (c.kind == Kind::Slider && c.patches[0] == "@camera_shake") {
@@ -2323,6 +2335,7 @@ bool SaveSettings() {
     bool fps_on = false, pedals_on = false, fast_on = fast_render, full_on = true, unlock_on = false, unlock_all_on = false;
     for (const auto& c : g_c) {
       if (c.kind == Kind::Segmented && c.patches[0] == "@lock_horizon") g_lock_horizon = c.sel;
+      if (c.kind == Kind::Toggle && c.patches[0] == "@head_tracking") g_head_tracking = c.sel != 0;
       if (c.kind == Kind::Toggle && c.patches[0] == "@fps") fps_on = c.sel != 0;
       if (c.kind == Kind::Toggle && c.patches[0] == "@pedals") pedals_on = c.sel != 0;
       if (c.kind == Kind::Toggle && c.patches[0] == "@fast") fast_on = c.sel != 0;
@@ -2352,6 +2365,7 @@ bool SaveSettings() {
 
     ini << "camera_patch=" << (g_c[g_camera_patch_row].sel ? 1 : 0) << "\r\n";
     ini << "lock_horizon=" << g_lock_horizon << "\r\n";
+    ini << "head_tracking=" << (g_head_tracking ? 1 : 0) << "\r\n";
     ini << "camera_shake=" << (g_camera_shake >= 0 ? g_c[g_camera_shake].sel : 100) << "\r\n";
     ini << "reflex=" << (g_reflex >= 0 ? g_c[g_reflex].sel : 0) << "\r\n";
     ini << "fgpace=" << (g_fgpace >= 0 ? g_c[g_fgpace].sel : 0) << "\r\n";
@@ -3573,14 +3587,16 @@ std::wstring Preflight() {
 
 std::wstring g_game_log;  // the log file of the game started last
 
-// BB_LOCK_HORIZON and BB_CAMERA_SHAKE, set on every start.
+// BB_LOCK_HORIZON, BB_HEAD_TRACKING and BB_CAMERA_SHAKE, set on every start.
 void SetLockHorizonEnvironment() {
-  int level = 0, shake = 100;
+  int level = 0, head = 0, shake = 100;
   for (const Ctl& c : g_c) {
     if (c.patches[0] == "@lock_horizon") level = c.sel;
+    if (c.patches[0] == "@head_tracking") head = c.sel;
     if (c.patches[0] == "@camera_shake") shake = c.sel;
   }
   SetEnvironmentVariableW(L"BB_LOCK_HORIZON", std::to_wstring(level).c_str());
+  SetEnvironmentVariableW(L"BB_HEAD_TRACKING", head ? L"1" : L"0");
   SetEnvironmentVariableW(L"BB_CAMERA_SHAKE", std::to_wstring(shake).c_str());
 }
 
